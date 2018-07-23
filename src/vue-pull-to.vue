@@ -1,9 +1,9 @@
 <template>
   <div class="vue-pull-to-wrapper"
-       :style="{ height: wrapperHeight, transform: `translate3d(0, ${diff}px, 0)` }">
+       :style="{ height: wrapperHeight, transform: pullResponder === 'container' ? `translate3d(0, ${diff}px, 0)`: 'none' }">
     <div v-if="topLoadMethod"
-         :style="{ height: `${topBlockHeight}px`, marginTop: `${-topBlockHeight}px` }"
-         class="action-block">
+         :style="{ height: `${topBlockHeight}px`, marginTop: `${-topBlockHeight}px`, transform: (pullResponder === 'container' || direction === 'up') ? 'none' : `translate3d(0, ${diff}px, 0)` }"
+         class="action-block" ref="topActionBlock">
       <slot name="top-block"
             :state="state"
             :state-text="topText"
@@ -16,8 +16,8 @@
       <slot></slot>
     </div>
     <div v-if="bottomLoadMethod"
-         :style="{ height: `${bottomBlockHeight}px`, marginBottom: `${-bottomBlockHeight}px` }"
-         class="action-block">
+         :style="{ height: `${bottomBlockHeight}px`, marginBottom: `${-bottomBlockHeight}px`, transform: (pullResponder === 'container' || direction === 'down') ? 'none' : `translate3d(0, ${diff}px, 0)` }"
+         class="action-block" ref="bottomActionBlock">
       <slot name="bottom-block"
             :state="state"
             :state-text="bottomText"
@@ -97,6 +97,10 @@
         default: () => {
           return {};
         }
+      },
+      pullResponder: {
+        type: String,
+        default: 'container'
       }
     },
     data() {
@@ -186,11 +190,27 @@
         }, loadedStayTime);
       },
       scrollTo(y, duration = 200) {
-        this.$el.style.transition = `${duration}ms`;
-        this.diff = y;
-        setTimeout(() => {
-          this.$el.style.transition = '';
-        }, duration);
+        if (this.pullResponder === 'container') {
+          this.$el.style.transition = `${duration}ms`;
+          this.diff = y;
+          setTimeout(() => {
+            this.$el.style.transition = '';
+          }, duration);
+        } else {
+          if (this.direction === 'down') {
+            this.$refs.topActionBlock.style.transition = `${duration}ms`;
+            this.diff = y;
+            setTimeout(() => {
+              this.$refs.topActionBlock.style.transition = '';
+            }, duration);
+          } else {
+            this.$refs.bottomActionBlock.style.transition = `${duration}ms`;
+            this.diff = y;
+            setTimeout(() => {
+              this.$refs.bottomActionBlock.style.transition = '';
+            }, duration);
+          }
+        }
       },
 
       checkBottomReached() {
